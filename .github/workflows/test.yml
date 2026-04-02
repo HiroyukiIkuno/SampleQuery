@@ -9,6 +9,12 @@ defaults:
     shell: bash
 
 jobs:
+  dump:
+    runs-on: ubuntu-latest
+    steps:
+      - run: cat ${GITHUB_EVENT_PATH}
+      - run: printenv
+
   check-rereview:
     runs-on: ubuntu-latest
     steps:
