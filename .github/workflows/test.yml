@@ -27,12 +27,15 @@ jobs:
             const prNumber = context.payload.pull_request.number;
             const requestedReviewer = context.payload.requested_reviewer.login;
 
+            // 1. このPRの過去の全レビュー履歴を取得
             const {data:reviews} = await github.rest.pulls.listReviews({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: prNumber,
             });
 
+            // 2. 今回依頼されたユーザーが、過去に一度でもレビューを投稿しているか判定
+            // (stateが 'APPROVED', 'CHANGES_REQUESTED', 'COMMENTED' のいずれか)
             const isReReview = reviews.some(review => review.user.login === requestedReviewer)
             if (isReReview) {
               console.log(`[Result] ${requestedReviewer}さんは過去にレビュー済みです。これは「リレビュー」です。`);
