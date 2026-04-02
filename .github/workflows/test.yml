@@ -16,6 +16,7 @@ jobs:
       - run: printenv
 
   check-rereview:
+    if: ${{ github.event.sender.login != 'Copilot' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v8
