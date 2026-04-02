@@ -1,0 +1,39 @@
+name: test
+
+on:
+  pull_request:
+    types: [review_requested]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  check-rereview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v8
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const requestedReviewer = context.payload.requested_reviewer.login;
+
+            const {data:reviews} = await github.rest.pulls.listReviews({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+            });
+
+            const isReReview = reviews.some(review => review.user.login === requestedReviewer)
+            if (isReReview) {
+              console.log(`[Result] ${requestedReviewer}さんは過去にレビュー済みです。これは「リレビュー」です。`);
+              return true;
+            }
+            else {
+              console.log(`[Result] ${requestedReviewer}さんは過去にレビューしていません。これは「初回レビュー」です。`);
+              return false;
+            }
+          result-encoding: string
+
+      - if: steps.check-rereview.outputs.result == 'true'
+        run: echo "リレビューが必要です。"
