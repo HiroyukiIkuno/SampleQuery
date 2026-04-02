@@ -1,4 +1,4 @@
-name: test
+name: レビュアー追加
 
 on:
   pull_request:
@@ -15,12 +15,14 @@ jobs:
       - run: cat ${GITHUB_EVENT_PATH}
       - run: printenv
 
-  check-rereview:
+  add-reviewer:
     if: ${{ github.event.sender.login != 'Copilot' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/github-script@v8
+      - id: check-rereview
+        uses: actions/github-script@v8
         with:
+          result-encoding: string
           script: |
             const prNumber = context.payload.pull_request.number;
             const requestedReviewer = context.payload.requested_reviewer.login;
@@ -34,13 +36,10 @@ jobs:
             const isReReview = reviews.some(review => review.user.login === requestedReviewer)
             if (isReReview) {
               console.log(`[Result] ${requestedReviewer}さんは過去にレビュー済みです。これは「リレビュー」です。`);
-              return true;
-            }
-            else {
+            } else {
               console.log(`[Result] ${requestedReviewer}さんは過去にレビューしていません。これは「初回レビュー」です。`);
-              return false;
             }
-          result-encoding: string
+            return isReReview;
 
       - if: steps.check-rereview.outputs.result == 'true'
         run: echo "リレビューが必要です。"
