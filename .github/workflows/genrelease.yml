@@ -1,10 +1,12 @@
 name: Generate Draft Release via GitHub CLI
 
 on:
-  push:
-    tags:
-      - "v*.*.*"
   workflow_dispatch:
+    inputs:
+      tagname:
+        type: string
+        required: true
+        description: 作成するタグ名
 
 jobs:
   release:
@@ -16,6 +18,11 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 0 # 最新タグと過去タグの差分を計算するためにすべての履歴を取得
+
+      - name: generate tag
+        run: |
+          git tag ${{ github.event.inputs.tagname }}
+          git push origin ${{ github.event.inputs.tagname }}
 
       # 1. 2つのタグ間の差分から最新と過去のGitタグを自動取得
       - name: Get latest and previous tags
