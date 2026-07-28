@@ -1,0 +1,52 @@
+name: Generate Draft Release via GitHub CLI
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # リリースや下書きを作成するために必須の権限
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # 最新タグと過去タグの差分を計算するためにすべての履歴を取得
+
+      # 1. 2つのタグ間の差分から最新と過去のGitタグを自動取得
+      - name: Get latest and previous tags
+        id: tags
+        run: |
+          LATEST=$(git describe --tags --abbrev=0)
+          PREVIOUS=$(git describe --tags --abbrev=0 --tags "$LATEST~1" 2>/dev/null || echo "")
+          echo "latest=$LATEST" >> $GITHUB_OUTPUT
+          echo "previous=$PREVIOUS" >> $GITHUB_OUTPUT
+
+      # 2. GitHub公式のCopilotアクションでリリースノートを「生成（テキスト化）」
+      - name: Generate Release Notes via Copilot
+        id: copilot
+        uses: github/copilot-release-notes@main
+        with:
+          from-ref: ${{ steps.tags.outputs.previous }}
+          to-ref: ${{ steps.tags.outputs.latest }}
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+
+      # 3. GitHub公式の「gh」コマンドを使用して下書きリリースを作成
+      - name: Create Draft Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # ghコマンドの実行に必要なトークン [1]
+          RELEASE_NOTES: ${{ steps.copilot.outputs.release-notes }} # Copilotが生成したテキスト [2]
+        run: |
+          # 環境変数からリリースノートのテキストをファイルに書き出す [2]
+          echo "$RELEASE_NOTES" > release_notes.md
+
+          # gh release create コマンドで下書き（--draft）を作成 [1]
+          gh release create "${{ steps.tags.outputs.latest }}" \
+            --title "Release ${{ steps.tags.outputs.latest }}" \
+            --notes-file release_notes.md \
+            --draft
