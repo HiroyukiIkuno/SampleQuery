@@ -28,9 +28,7 @@ jobs:
       - name: Get latest and previous tags
         id: tags
         run: |
-          LATEST=$(git describe --tags --abbrev=0)
           PREVIOUS=$(git describe --tags --abbrev=0 --tags "$LATEST~1" 2>/dev/null || echo "")
-          echo "latest=$LATEST" >> $GITHUB_OUTPUT
           echo "previous=$PREVIOUS" >> $GITHUB_OUTPUT
 
       # 2. GitHub公式のCopilotアクションでリリースノートを「生成（テキスト化）」
@@ -38,8 +36,7 @@ jobs:
         id: copilot
         uses: github/copilot-release-notes@main
         with:
-          from-ref: ${{ steps.tags.outputs.previous }}
-          to-ref: ${{ steps.tags.outputs.latest }}
+          base-ref: ${{ steps.tags.outputs.previous }}
         env:
           COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
 
