@@ -28,6 +28,7 @@ jobs:
       - name: Get latest and previous tags
         id: tags
         run: |
+          LATEST=$(git describe --tags --abbrev=0)
           PREVIOUS=$(git describe --tags --abbrev=0 --tags "$LATEST~1" 2>/dev/null || echo "")
           echo "previous=$PREVIOUS" >> $GITHUB_OUTPUT
 
