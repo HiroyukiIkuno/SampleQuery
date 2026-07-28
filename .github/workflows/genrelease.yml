@@ -1,4 +1,4 @@
-name: Generate Draft Release via GitHub CLI
+name: ドラフトリリースノート作成
 
 on:
   workflow_dispatch:
